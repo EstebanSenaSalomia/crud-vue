@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Publico;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Nota extends Model
+{
+  protected $table = 'tbl_notas_publicas';
+  public $timestamps = false;
+  protected $fillable = [
+      'titulo','contenido'
+  ];
+
+  public function scopeSearch($query, $request)
+   {
+     if ($request->buscar) {
+        $query->where('titulo','LIKE','%'.$request->buscar.'%');
+     }
+     return $query;
+   }
+}
