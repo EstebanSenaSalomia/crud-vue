@@ -1,0 +1,283 @@
+<template>
+    <div class="col-xs-12">
+        <alertas :success="successMessage" :error="errorMessage"></alertas>
+
+ <panel footer-class="hidden" >
+   <template slot="header"> Nueva nota</template>
+     <template slot="buttons">
+       <button type="submit" @click.prevent="guardarNota()" name="button" class="btn btn-success btn-flat"><i class="fa fa-save"></i></button>
+     </template>
+
+   <template slot="main">
+       <div class="form-group">
+        <label for="titulo">Titulo</label>
+        <input autofocus type="text" class="form-control" v-model="nota.titulo">
+       </div>
+
+      <div class="form-group">
+        <label for="contenido">Nota</label>
+        <textarea  class="form-control" rows="2" v-model="nota.contenido" cols="20"></textarea>
+     </div>
+   </template>
+ </panel>
+
+   <div class="row">
+     <div class="col-md-6 col-sm-12">
+       <div class="input-group input-group-sm m-botton" >
+        <span class="input-group-addon"><i class="fa fa-search"></i></span>
+        <input type="text" name="buscar" v-on:keyup.enter="filtrar()" v-model="buscar" class="form-control" placeholder="Username" aria-describedby="sizing-addon1">
+      </div>
+     </div>
+   </div>
+
+<div class="row">
+  <div class="col-md-6 col-sm-12" v-for="(item,index) in notas.data" :key="index">
+    <panel panel-class="panel-info" footer-class="hidden">
+      <template slot="header">{{item.titulo}}<br><small>{{item.created_at}}</small></template>
+      <template slot="buttons">
+          <button type="button" name="button" data-toggle="modal" @click="modalNotaEditar(item)" class="btn btn-flat btn-warning btn-sm" ><i class="fa fa-edit"></i></button>
+          <button type="button" @click="eliminarNota(item)" class="btn btn-flat btn-danger btn-sm"><i class="fa fa-trash"></i></button>
+      </template>
+       <template slot="main" v-text="item.contenido">
+         {{item.contenido}}
+       </template>
+    </panel>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3">
+    <div v-show="notas.length==0" class="alert alert-info" role="alert">No se han registrado notas</div>
+  </div>
+</div>
+<modal id="modalNota">
+   <template slot="header">
+     Editar Nota
+   </template>
+   <template slot="main">
+     <div class="form-group">
+      <label for="">Titulo</label>
+      <input autofocus type="text" class="form-control" name="titulo" v-model="modal.header" >
+    </div>
+    <div class="form-group">
+     <label for="titulo">Contenido</label>
+     <textarea  class="form-control" rows="2" cols="20" name="contenido" v-model="modal.contenido"></textarea>
+   </div>
+   <input type="hidden" name="id" :value="modal.idRegistro">
+   </template>
+   <template slot="footer">
+     <button type="button" class="btn btn-flat btn-primary" @click="actualizarNota()">Actualizar</button>
+   </template>
+</modal>
+<panel panel-class="panel-info" >
+    <template slot="footer">
+        <pagination :data="notas" v-on:pagination-change-page="filtrar" :limit="5"></pagination>
+    </template>
+</panel>
+    </div>
+</template>
+
+<script>
+    export default {
+        data() {
+            return {
+              buscar:'',
+              modal:{
+                header:'',
+                contenido:'',
+                idRegistro:''
+              },
+              nota:{
+                titulo:'',
+                contenido:''
+              },
+              notas :{},
+                app_url: APP_URL,
+                url: {
+                    ruta: '',
+                    seccion: '',
+                },
+                successMessage: [],
+                errorMessage: [],
+                permisos: {},
+                config: {
+                    filtrando: false,
+                    showActions: false,
+                    actionsWidth: '',
+                },
+                rows: {
+                    data: [],
+                    last_page: 0,
+                    total: 0,
+                },
+                filters: {
+                    id: null,
+                    mandante: null,
+                    fecha: null,
+                },
+                selects: {
+                    mandantes: [],
+                },
+            }
+        },
+        mounted: function() {
+          this.filtrar();
+            // this.filtrar();
+            // this.getPermisos();
+        },
+        methods: {
+            actualizarNota:function(){
+              if(this.modal.header.trim() === '' || this.modal.contenido.trim() === ''){
+                this.errorMessage.push('Debes completar los campos antes de guardar'),
+                $('#modalNota').modal('hide');
+                setTimeout(()=>{
+                  this.limpiarMensajes();
+                },6000);
+                return;
+              }
+              let request = new FormData;
+              request.append('titulo', this.modal.header);
+              request.append('contenido', this.modal.contenido);
+              request.append('id',this.modal.idRegistro);
+              let url = this.app_url + 'notas/actualizar';
+
+              axios.post(url,request).
+              then((response)=>{
+                this.successMessage.push(response.data.exito),
+                this.filtrar();
+                setTimeout(()=>{
+                  this.limpiarMensajes();
+                },6000);
+                $('#modalNota').modal('hide');
+              }).catch(error => {
+                  this.catch(error);
+                  this.errorMessage.push(response.data.error);
+                  setTimeout(()=>{
+                    this.limpiarMensajes();
+                  },6000);
+              });
+            },
+            modalNotaEditar:function(item){
+                this.modal.header = item.titulo;
+                this.modal.contenido = item.contenido;
+                this.modal.idRegistro = item.id;
+                $('#modalNota').modal('show');
+            },
+            guardarNota:function(){
+              if(this.nota.titulo.trim() === '' || this.nota.contenido.trim() === ''){
+                this.errorMessage.push('Debes completar los campos antes de guardar'),
+                setTimeout(()=>{
+                  this.limpiarMensajes();
+                },6000);
+                return;
+              }
+              let request = new FormData;
+              request.append('titulo', this.nota.titulo);
+              request.append('contenido', this.nota.contenido);
+              let url = this.app_url + 'notas';
+
+              axios.post(url,request).
+              then((response)=>{
+                this.nota.titulo='',
+                this.nota.contenido='',
+                this.successMessage.push(response.data.exito),
+                this.filtrar();
+                setTimeout(()=>{
+                  this.limpiarMensajes();
+                },6000);
+              }).catch(error => {
+                  this.catch(error);
+                  this.errorMessage.push(response.data.error);
+                  setTimeout(()=>{
+                    this.limpiarMensajes();
+                  },6000);
+              });
+            },
+            // mostrarNota:function(page=1){
+            //   let url = this.app_url + 'notas/mostrar?page='+page;
+            //   axios.get(url).then(res=>{
+            //     this.notas = res.data;
+            //     console.log(this.notas.data)
+            //   })
+            // },
+            eliminarNota:function(nota){
+              swal({
+                title:'¿Esta seguro de eliminar esta nota?',
+                html:'<h4 align="center">'+nota.titulo+'</h4>',
+                showConfirmButton : true
+              }).then(res =>{
+                if (res.value) {
+                  let url = this.app_url + 'notas/eliminar/'+nota.id;
+                  axios.delete(url).then((response)=>{
+                    this.successMessage.push(response.data.exito),
+                    setTimeout(()=>{
+                      this.limpiarMensajes();
+                    },6000);
+                      this.filtrar();
+                    });
+                }
+              }).catch(error => {
+                  this.catch(error);
+                  this.errorMessage.push(response.data.error);
+                  setTimeout(()=>{
+                    this.limpiarMensajes();
+                  },6000);
+              });
+            },
+            getPermisos: async function() {
+                this.permisos = await this.$root.permissions(this.url.ruta, this.url.seccion);
+                this.actions();
+            },
+            actions: function() {
+                var one_width = 37.43,
+                side_width = 20,
+                buttons = 0;
+                // buttons += this.permisos.accion ? 1 : 0;
+                var final_width = one_width * buttons + (buttons - 1) * side_width - 17 * (buttons > 2 ? (buttons - 2) : 0);
+                this.config.showActions = final_width > 0;
+                this.config.actionsWidth = Math.ceil(final_width) + 'px';
+            },
+            limpiarMensajes: function(){
+                this.successMessage = [];
+                this.errorMessage = [];
+            },
+            catch: function(error) {
+                this.errorMessage = this.$root.gestionarErrorResponse(error);
+            },
+            filtrar: function(page = 1) {
+              ventanaCargando();
+
+              this.config.filtrando = true;
+              this.filters.page = page;
+
+              let request = new FormData;
+              request.append("page", page);
+              request.append("buscar", this.buscar);
+
+              axios
+              .post(this.app_url + 'notas/mostrar', request)
+              .then((response) => {
+                  this.notas = response.data;
+              })
+              .catch((error) => { this.catch(error); })
+              .finally(() => {
+                  ventanaCargando();
+                  this.config.filtrando = false;
+              });
+            },
+            limpiar: function() {
+                this.filters = {
+                    id: null,
+                    mandante: null,
+                    fecha: null,
+                },
+                this.filtrar(1);
+            },
+        },
+    }
+</script>
+
+<style lang="css" scoped>
+  .m-botton{
+    margin-bottom: 20px;
+  }
+</style>
