@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Http\Controllers\Publico;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+
+use App\Publico\Nota;
+
+class NotasController extends Controller
+{
+  public function view()
+  {
+    return view('vue-public');
+  }
+
+  public function crearNota(Request $request)
+  {
+    try {
+
+      $nuevaNota = new Nota();
+      $nuevaNota->titulo = $request->titulo;
+      $nuevaNota->contenido = $request->contenido;
+      $nuevaNota->save();
+
+    } catch (\Exception $e) {
+
+      return response()->json(['error'=>'error al guardar la nota.'],500);
+    }
+      return response()->json(['exito'=>'La nota se ha registrado con exito.'],200);
+  }
+
+  public function mostrarNotas(Request $request)
+  {
+    return  Nota::search($request)->orderby('id','DESC')->paginate(10);
+  }
+
+  public function eliminarNota($id)
+  {
+    try {
+
+      $nota = Nota::find($id);
+      $nota->delete();
+
+    } catch (\Exception $e) {
+
+      return response()->json(['error'=>'error al eliminar la nota.'],500);
+    }
+      return response()->json(['exito'=>'La nota se ha eliminado.'],200);
+  }
+
+  public function actualizarNota(Request $request)
+  {
+    try {
+      DB::beginTransaction();
+      $nota = Nota::findOrFail($request->id);
+      $nota->titulo = $request->titulo;
+      $nota->contenido = $request->contenido;
+      $nota->update();
+      DB::commit();
+    } catch (\Exception $e) {
+
+        return response()->json(['error'=>'error al actualizar la nota'],500);
+        DB::rollBack();
+    }
+        return response()->json(['exito'=>'La nota se ha actualizado con exito'],200);
+  }
+}
