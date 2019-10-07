@@ -1,0 +1,29 @@
+<?php
+
+Route::prefix('notas')
+// ->middleware('auth_notas')
+->namespace('Publico')
+->name('notas')
+->group(function(){
+  Route::get('/', 'NotasController@view')->name('.index');
+
+  Route::post('/','NotasController@crearNota')->name('.index');
+  Route::post('/mostrar','NotasController@mostrarNotas')->name('.mostrar');
+  Route::delete('/eliminar/{id}','NotasController@eliminarNota')->name('.eliminar');
+  Route::post('/actualizar','NotasController@actualizarNota')->name('.actualizar');
+});
+***__________________***_______________________________________________***___________________________________***________________
+//ruta vue//
+const routes = [
+    {
+        path: '/notas',
+        'component': () => import(
+            /* webpackChunkName: 'public/Notas' */
+            '../app/public/Notas'
+        )
+    }
+];
+
+export default routes;
+
+import publicVue        		from '../routes/publico';
