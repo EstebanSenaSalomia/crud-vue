@@ -8,7 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Publico\Nota;
 
 class NotasController extends Controller
+
 {
+  public function __construct(){
+
+       $this->middleware('auth');
+  }
+
   public function view()
   {
     return view('vue-public');
@@ -52,16 +58,16 @@ class NotasController extends Controller
   public function actualizarNota(Request $request)
   {
     try {
-      DB::beginTransaction();
+
       $nota = Nota::findOrFail($request->id);
       $nota->titulo = $request->titulo;
       $nota->contenido = $request->contenido;
       $nota->update();
-      DB::commit();
+
     } catch (\Exception $e) {
 
         return response()->json(['error'=>'error al actualizar la nota'],500);
-        DB::rollBack();
+
     }
         return response()->json(['exito'=>'La nota se ha actualizado con exito'],200);
   }
