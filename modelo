@@ -15,8 +15,10 @@ class Nota extends Model
   public function scopeSearch($query, $request)
    {
      if ($request->buscar) {
-        $query->where('titulo','LIKE','%'.$request->buscar.'%');
+        $query->where('titulo','LIKE','%'.$request->buscar.'%')
+        ->orWhere('contenido','LIKE','%'.$request->buscar.'%');
      }
+     
      return $query;
    }
 }
