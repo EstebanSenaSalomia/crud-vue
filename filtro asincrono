@@ -1,0 +1,10 @@
+filterPlaca(){
+      if (this.createFilters.placa) {
+        return this.createValues.detalle.filter(e => {
+          return e.placa.toLowerCase().includes(this.createFilters.placa.toLowerCase());
+        });
+      }
+      else {
+        return this.createValues.detalle
+      }
+    },
